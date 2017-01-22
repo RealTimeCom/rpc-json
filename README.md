@@ -1,2 +1,2 @@
 # rpc-json
-JSON over RPC
+RPC with JSON
