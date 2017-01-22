@@ -1,0 +1,26 @@
+{
+    "name": "rpc-json",
+    "version": "0.0.1",
+    "description": "RPC with JSON",
+    "main": "index.js",
+    "scripts": {
+        "test": "node test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/RealTimeCom/rpc-json.git"
+    },
+    "keywords": [
+        "json",
+        "rpc",
+        "stream",
+        "server",
+        "client"
+    ],
+    "author": "Tanase Laurentiu Iulian <expertphp@gmail.com> (https://github.com/RealTimeCom)",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/RealTimeCom/rpc-json/issues"
+    },
+    "homepage": "https://github.com/RealTimeCom/rpc-json"
+}
