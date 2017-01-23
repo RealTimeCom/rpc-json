@@ -1,7 +1,7 @@
 {
     "name": "rpc-json",
-    "version": "0.0.1",
-    "description": "RPC with JSON",
+    "version": "0.1.0",
+    "description": "RPC JSON - RPC Server and Client Stream with JSON header and RAW body",
     "main": "index.js",
     "scripts": {
         "test": "node test.js"
