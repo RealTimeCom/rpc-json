@@ -36,10 +36,10 @@ const client = new rpc.client; // create client stream
 
 client.pipe(server).pipe(client). // pipe: client (request to:) > server (response back to:) > client
 exec((head, body) => { // server response: String "head1", Buffer "body1"
-    console.log('exec1', head, body.toString());
+    console.log('response1', head, body.toString());
 }, 'head1', 'body1'). // client request: String "head1", String "body1"
 exec((head, body) => {
-    console.log('exec2', head, body.toString());
+    console.log('response2', head, body.toString());
 }, 'head2', 'body2');
 
 // and so on...
@@ -47,9 +47,9 @@ exec((head, body) => {
 console.log:
 ---
 request head1 body1
-exec1 head1 body1
+response1 head1 body1
 request head2 body2
-exec2 head2 body2
+response2 head2 body2
 */
 ```
 #### Simple client-server socket stream pipe
@@ -67,7 +67,7 @@ listen(function() { // server listen to a random port
     net.connect(a.port, a.address, function() { // client connected to the server:
         this.pipe(client2).pipe(this); // pipe 'rpc.client' to server connection 'this'
         client2.exec((head, body) => { // server response
-            console.log('exec3', head, body.toString());
+            console.log('response3', head, body.toString());
         }, 'head3', 'body3'); // client request
     });
 });
@@ -75,7 +75,7 @@ listen(function() { // server listen to a random port
 console.log:
 ---
 request head3 body3
-exec3 head3 body3
+response3 head3 body3
 */
 ```
 #### Delay request
@@ -83,7 +83,7 @@ Execute a delay request after 1 second on the server `server2`, see above.
 ```js
 setTimeout(() => {
     client2.exec((head, body) => { // server response
-        console.log('exec4', head, body.toString());
+        console.log('response4', head, body.toString());
         client2.push(null); // optional, end client2 connection
         socketServer.close(); // optional, close the socket server
     }, 'head4', 'body4'); // client request
@@ -92,7 +92,7 @@ setTimeout(() => {
 console.log:
 ---
 request head4 body4
-exec4 head4 body4
+response4 head4 body4
 */
 ```
 ##### Server function `request (response, head, body)`
