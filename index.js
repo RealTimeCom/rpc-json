@@ -74,7 +74,7 @@ function parse(chunk, server) { // type server ?
                             this.c = this.z;
                         }
                         if (server) {
-                            this._readableState.pipes.pause(); // pause socket until server response back
+                            if (this._readableState.pipes.pause) { this._readableState.pipes.pause(); } // pause socket until server response back
                             this.f(send.bind(this), p.h, body);
                         } else {
                             this.f(p.h, body);
@@ -107,7 +107,7 @@ function parse(chunk, server) { // type server ?
             }
             this.h = true; // next chunk is header
             if (server) { // is server
-                this._readableState.pipes.pause(); // pause socket until server response back
+                if (this._readableState.pipes.pause) { this._readableState.pipes.pause(); } // pause socket until server response back
                 this.f(send.bind(this), this.p.h, body); // call server function
             } else { // is client
                 this.f(this.p.h, body); // call client function
