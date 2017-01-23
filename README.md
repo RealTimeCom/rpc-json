@@ -79,7 +79,7 @@ exec3 head3 body3
 */
 ```
 #### Delay request
-Execute an request after 1 second on the server `server2`, see above.
+Execute a request after 1 second on the server `server2`, see above.
 ```js
 setTimeout(() => {
     client2.exec((head, body) => { // server response
