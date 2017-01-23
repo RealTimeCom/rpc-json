@@ -97,12 +97,12 @@ exec4 head4 body4
 ```
 ##### Server function `request (response, head, body)`
 * <b><code>response (head, body)</code></b> - callback function, server response
-* `head` - Value, can be any type (not a function)
+* `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
 * `body` - Buffer or String
 
 ##### Client function `exec (response, head, body)`
 * <b><code>response (head, body)</code></b> - callback function, server response
-* `head` - Value, can be any type (not a function)
+* `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
 * `body` - Buffer or String
 
 **For more informations, consult or run the <a href="https://github.com/RealTimeCom/rpc-json/blob/master/test.js"><b>test.js</b></a> file.**
