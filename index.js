@@ -7,8 +7,8 @@ class server extends Transform {
     constructor(f) {
         super();
         this.f = f; // cache server function
+        this.e = 'serverError'; // custom error event name
         this.n = Buffer.from('\r\n');
-        this.e = 'serverError';
         this.h = true; // data is header?
         this.z = Buffer.allocUnsafeSlow(0); // create an un-pooled empty buffer
         this.c = this.z; // init empty cache buffer
@@ -31,8 +31,8 @@ class client extends Transform {
     constructor() {
         super();
         this.f = undefined;
+        this.e = 'clientError'; // custom error event name
         this.n = Buffer.from('\r\n');
-        this.e = 'clientError';
         this.h = true; // data is header?
         this.z = Buffer.allocUnsafeSlow(0); // create an un-pooled empty buffer
         this.c = this.z; // init empty cache buffer
@@ -62,7 +62,7 @@ function parse(chunk, server) { // type server ?
         const i = this.c.indexOf(this.n); // search for separator
         if (i !== -1) { // separator is found
             const h = this.c.slice(0, i).toString().trim();
-            try {
+            try { // try JSON.parse()
                 const p = JSON.parse(h);
                 if ('h' in p && 'l' in p && typeof p.l === 'number' && p.l >= 0) {
                     const body = this.c.slice(i + this.n.length);
@@ -118,9 +118,22 @@ function parse(chunk, server) { // type server ?
 
 function send(head, body) {
     if (this.w) {
-        if (body !== undefined && !Buffer.isBuffer(body)) { body = Buffer.from(body); }
-        this.push(Buffer.concat([Buffer.from(JSON.stringify({ h: head, l: body.length })), this.n, body]));
-        if (this._readableState.pipes.resume) { this._readableState.pipes.resume(); }// resume socket, get more data
+        if (body === undefined) { body = this.z; }
+        if (!Buffer.isBuffer(body)) {
+            if (typeof body === 'string') {
+                body = Buffer.from(body);
+            } else { // try convert body to String
+                body = Buffer.from(body + '');
+            }
+        }
+        try { // try JSON.stringify()
+            this.push(Buffer.concat([Buffer.from(JSON.stringify({ h: head, l: body.length })), this.n, body]));
+            if (this._readableState.pipes.resume) { this._readableState.pipes.resume(); }// resume socket, get more data
+        } catch (e) {
+            this.emit(this.e, e);
+            this.c = this.z;
+            if (this.w) { this.push(null); }
+        }
     }
 }
 

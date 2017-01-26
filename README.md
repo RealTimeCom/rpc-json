@@ -105,6 +105,15 @@ response4 head4 body4
 * `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
 * `body` - Buffer or String
 
+##### Custom error event name
+* `serverError` - error event name for `rpc.server`
+* `clientError` - error event name for `rpc.client`
+
+```js
+server.on('serverError', e => console.log('onServerError', e));
+client.on('clientError', e => console.log('onClientError', e));
+```
+
 **For more informations, consult or run the <a href="https://github.com/RealTimeCom/rpc-json/blob/master/test.js"><b>test.js</b></a> file.**
 
 --------------------------------------------------------
