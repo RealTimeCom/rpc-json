@@ -88,7 +88,7 @@ setTimeout(() => {
         this.push(null); // optional, end client2 connection
         this.server.close(); // optional, close the socket server
     }, 'head4', 'body4'); // client2 request
-    // null - discard callback response, using client anonymous callback funtion
+    // null - discard callback response, using client anonymous callback function
     client.exec(null, 'head5', 'body5'); // client internal request, is faster than client2 net socket
 }, 1000); // exec command on 'client2' after 1 second
 /**
