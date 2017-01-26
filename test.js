@@ -34,18 +34,19 @@ const net = require('net');
 const server2 = new rpc.server; // using default anonymous 'request' function
 const client2 = new rpc.client;
 
-const socketServer = net.createServer(socket => { // client connected to the server:
+net.createServer(socket => { // client connected to the server:
     socket.pipe(server2).pipe(socket); // pipe 'rpc.server' to client connection 'socket'
 }).
 listen(function() { // server listen to a random port
     const a = this.address(); // get the server port and address
+    client2.server = this; // optional, attach server object 'this' to 'client2'
     net.connect(a.port, a.address, function() { // client connected to the server:
-        this.pipe(client2).pipe(this); // pipe 'rpc.client' to server connection 'this'
-        client2.exec((head, body) => { // server response
+        this.pipe(client2).pipe(this); // pipe 'rpc.client' to server socket connection 'this'
+        client2.exec((head, body) => { // server2 response
             console.log('response3', head, body.toString());
-        }, 'head3', 'body3'); // client request
-    });
-});
+        }, 'head3', 'body3'); // client2 request
+    }).on('end', () => console.log('socket client end'));
+}).on('close', () => console.log('socket server close'));
 /**
 console.log:
 ---
@@ -53,14 +54,19 @@ response3 head3 body3
 */
 
 setTimeout(() => {
-    client2.exec((head, body) => { // server response
+    client2.exec(function(head, body) { // server response
         console.log('response4', head, body.toString());
-        client2.push(null); // optional, end client2 connection
-        socketServer.close(); // optional, close the socket server
-    }, 'head4', 'body4'); // client request
+        this.push(null); // optional, end client2 connection
+        this.server.close(); // optional, close the socket server
+    }, 'head4', 'body4'); // client2 request
+    // null - discard callback response, using client anonymous callback funtion
+    client.exec(null, 'head5', 'body5'); // client internal request, is faster than client2 net socket
 }, 1000); // exec command on 'client2' after 1 second
 /**
 console.log:
 ---
+request head5 body5
 response4 head4 body4
+socket server close
+socket client end
 */

@@ -6,8 +6,7 @@ const Transform = require('stream').Transform;
 class server extends Transform {
     constructor(f) {
         super();
-        this.x = (response, head, body) => response(head, body); // default anonymous function
-        this.f = typeof f === 'function' ? f.bind(this) : this.x; // cache server function
+        this.f = typeof f === 'function' ? f.bind(this) : (response, head, body) => response(head, body); // cache server function
         this.e = 'serverError'; // custom error event name
         this.n = Buffer.from('\r\n');
         this.h = true; // data is header?
@@ -30,8 +29,7 @@ server.prototype._flush = function(cb) {
 class client extends Transform {
     constructor() {
         super();
-        this.x = () => {}; // default anonymous function
-        this.f = this.x;
+        this.f = undefined;
         this.e = 'clientError'; // custom error event name
         this.n = Buffer.from('\r\n');
         this.h = true; // data is header?
@@ -51,7 +49,7 @@ client.prototype._flush = function(cb) {
     cb();
 };
 client.prototype.exec = function(f, head, body) {
-    this.f = typeof f === 'function' ? f.bind(this) : this.x; // cache client function
+    this.f = typeof f === 'function' ? f.bind(this) : undefined; // cache client function
     send.bind(this)(head, body);
     return this;
 };
@@ -78,7 +76,7 @@ function parse(chunk, server) { // type server ?
                             if (this._readableState.pipes.pause) { this._readableState.pipes.pause(); } // pause socket until server response back
                             this.f(send.bind(this), p.h, body);
                         } else {
-                            this.f(p.h, body);
+                            if (typeof this.f === 'function') { this.f(p.h, body); }
                         }
                     } else { // need more data for body
                         this.p = p; // cahce header
@@ -111,7 +109,7 @@ function parse(chunk, server) { // type server ?
                 if (this._readableState.pipes.pause) { this._readableState.pipes.pause(); } // pause socket until server response back
                 this.f(send.bind(this), this.p.h, body); // call server function
             } else { // is client
-                this.f(this.p.h, body); // call client function
+                if (typeof this.f === 'function') { this.f(this.p.h, body); } // call client function
             }
         } // need more bytes for body
     }
