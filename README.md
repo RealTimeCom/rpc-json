@@ -95,17 +95,17 @@ request head4 body4
 response4 head4 body4
 */
 ```
-##### Server function `request (response, head, body)`
+#### Server function `request (response, head, body)`
 * <b><code>response (head, body)</code></b> - callback function, server response
 * `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
 * `body` - Buffer or String
 
-##### Client function `exec (response, head, body)`
+#### Client function `exec (response, head, body)`
 * <b><code>response (head, body)</code></b> - callback function, server response
 * `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
 * `body` - Buffer or String
 
-##### Custom error event name
+#### Custom error event names
 * `serverError` - error event name for `rpc.server`
 * `clientError` - error event name for `rpc.client`
 
