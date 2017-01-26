@@ -88,8 +88,8 @@ setTimeout(() => {
         this.push(null); // optional, end client2 connection
         this.server.close(); // optional, close the socket server
     }, 'head4', 'body4'); // client2 request
-    // null - discard callback response, using client anonymous callback function
-    client.exec(null, 'head5', 'body5'); // client internal request, is faster than client2 net socket
+    // client internal request, is faster than client2 net socket
+    client.exec(null, 'head5', 'body5'); // null - discard callback response
 }, 1000); // exec command on 'client2' after 1 second
 /**
 console.log:
@@ -109,7 +109,7 @@ socket client end
 Default server anonymous `request` function is response back to client with the same request `head` and `body` values, like this: `(response, head, body) => response(head, body)`
 
 #### Client function `exec (response, head, body)`
-* <b><code>response (head, body)</code></b> - callback function, server response
+* <b><code>response (head, body)</code></b> - callback function, server response, null - discard
 * `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
 * `body` - Buffer or String
 * `this` - Bind Client Object
