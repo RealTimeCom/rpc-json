@@ -25,6 +25,7 @@ const rpc = require('rpc-json');
 ```js
 function request(response, head, body) {
     console.log('request', head, body.toString());
+    // response back, like default server anonymous 'request' function
     response(head, body); // callback, server response
 }
 ```
@@ -56,14 +57,15 @@ response2 head2 body2
 Create net socket server `socketServer` and connect client socket `this` to the server. Exec one request on the server.
 ```js
 const net = require('net');
-const server2 = new rpc.server(request);
+const server2 = new rpc.server; // using default anonymous 'request' function
 const client2 = new rpc.client;
 
-const socketServer = net.createServer(socket => { // client connected to the server:
+net.createServer(socket => { // client connected to the server:
     socket.pipe(server2).pipe(socket); // pipe 'rpc.server' to client connection 'socket'
 }).
 listen(function() { // server listen to a random port
     const a = this.address(); // get the server port and address
+    client2.server = this; // optional, attach server object `this` to 'client2'
     net.connect(a.port, a.address, function() { // client connected to the server:
         this.pipe(client2).pipe(this); // pipe 'rpc.client' to server connection 'this'
         client2.exec((head, body) => { // server response
@@ -74,7 +76,6 @@ listen(function() { // server listen to a random port
 /**
 console.log:
 ---
-request head3 body3
 response3 head3 body3
 */
 ```
@@ -84,14 +85,13 @@ Execute a delay request after 1 second on the server `server2`, see above.
 setTimeout(() => {
     client2.exec((head, body) => { // server response
         console.log('response4', head, body.toString());
-        client2.push(null); // optional, end client2 connection
-        socketServer.close(); // optional, close the socket server
+        this.push(null); // optional, end client2 connection
+        this.server.close(); // optional, close the socket server
     }, 'head4', 'body4'); // client request
 }, 1000); // exec command on 'client2' after 1 second
 /**
 console.log:
 ---
-request head4 body4
 response4 head4 body4
 */
 ```
@@ -99,11 +99,15 @@ response4 head4 body4
 * <b><code>response (head, body)</code></b> - callback function, server response
 * `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
 * `body` - Buffer or String
+* `this` - Bind Server Object
+
+Default server anonymous `request` function is response back to client with the same request `head` and `body` values, like this: `(response, head, body) => response(head, body)`
 
 #### Client function `exec (response, head, body)`
 * <b><code>response (head, body)</code></b> - callback function, server response
 * `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
 * `body` - Buffer or String
+* `this` - Bind Client Object
 
 #### Custom error event names
 * `serverError` - error event name for `rpc.server`

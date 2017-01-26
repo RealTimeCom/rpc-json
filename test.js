@@ -5,6 +5,7 @@ const rpc = require('./index.js');
 
 function request(response, head, body) {
     console.log('request', head, body.toString());
+    // response back, like default server anonymous 'request' function
     response(head, body); // callback, server response
 }
 
@@ -30,7 +31,7 @@ response2 head2 body2
 */
 
 const net = require('net');
-const server2 = new rpc.server(request);
+const server2 = new rpc.server; // using default anonymous 'request' function
 const client2 = new rpc.client;
 
 const socketServer = net.createServer(socket => { // client connected to the server:
@@ -48,7 +49,6 @@ listen(function() { // server listen to a random port
 /**
 console.log:
 ---
-request head3 body3
 response3 head3 body3
 */
 
@@ -62,6 +62,5 @@ setTimeout(() => {
 /**
 console.log:
 ---
-request head4 body4
 response4 head4 body4
 */

@@ -6,7 +6,8 @@ const Transform = require('stream').Transform;
 class server extends Transform {
     constructor(f) {
         super();
-        this.f = f; // cache server function
+        this.x = (response, head, body) => response(head, body); // default anonymous function
+        this.f = typeof f === 'function' ? f.bind(this) : this.x; // cache server function
         this.e = 'serverError'; // custom error event name
         this.n = Buffer.from('\r\n');
         this.h = true; // data is header?
@@ -16,7 +17,6 @@ class server extends Transform {
         this.w = true; // connection is open?
     }
 }
-
 server.prototype._transform = function(chunk, enc, cb) {
     parse.bind(this)(chunk, true); // parse chunk, true = is server
     cb();
@@ -30,7 +30,8 @@ server.prototype._flush = function(cb) {
 class client extends Transform {
     constructor() {
         super();
-        this.f = undefined;
+        this.x = () => {}; // default anonymous function
+        this.f = this.x;
         this.e = 'clientError'; // custom error event name
         this.n = Buffer.from('\r\n');
         this.h = true; // data is header?
@@ -50,7 +51,7 @@ client.prototype._flush = function(cb) {
     cb();
 };
 client.prototype.exec = function(f, head, body) {
-    this.f = f; // cache client function
+    this.f = typeof f === 'function' ? f.bind(this) : this.x; // cache client function
     send.bind(this)(head, body);
     return this;
 };
@@ -128,11 +129,11 @@ function send(head, body) {
         }
         try { // try JSON.stringify()
             this.push(Buffer.concat([Buffer.from(JSON.stringify({ h: head, l: body.length })), this.n, body]));
-            if (this._readableState.pipes.resume) { this._readableState.pipes.resume(); }// resume socket, get more data
+            if (this._readableState.pipes.resume) { this._readableState.pipes.resume(); } // resume socket, get more data
         } catch (e) {
             this.emit(this.e, e);
             this.c = this.z;
-            if (this.w) { this.push(null); }
+            this.push(null);
         }
     }
 }
