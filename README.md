@@ -4,6 +4,8 @@
 [![Build Status](https://travis-ci.org/RealTimeCom/rpc-json.svg?branch=master)](http://travis-ci.org/RealTimeCom/rpc-json)
 [![dependencies](https://david-dm.org/RealTimeCom/rpc-json.svg)](https://david-dm.org/RealTimeCom/rpc-json)
 
+[![json-1](https://cloud.githubusercontent.com/assets/22455434/22550324/2ccec420-e958-11e6-88c2-51fbe948c362.png)](https://github.com/RealTimeCom/rpc-json)
+
 **RPC JSON - Server and Client Stream with JSON header and RAW body**
 ```sh
 $ npm install rpc-json
