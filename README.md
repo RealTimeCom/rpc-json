@@ -120,7 +120,7 @@ Default server anonymous `request` function will response back to client with th
 ### Client class `(filter)`
 * <b><code>filter (response, head, body)</code></b> - function, optional, see below
 
-#### Client function `filter (response, head, body)`
+### Client function `filter (response, head, body)`
 * <b><code>response</code></b> - callback function, custom client response
 * `head` - Value, can be any type (not a function) - deserialized with JSON
 * `body` - Buffer or String
