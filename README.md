@@ -1,14 +1,14 @@
-## RPC JSON
+## RPC JSON - Stream transform protocol
 [![NPM](https://nodei.co/npm/rpc-json.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/rpc-json/)
 
 [![Build Status](https://travis-ci.org/RealTimeCom/rpc-json.svg?branch=master)](http://travis-ci.org/RealTimeCom/rpc-json)
 [![dependencies](https://david-dm.org/RealTimeCom/rpc-json.svg)](https://david-dm.org/RealTimeCom/rpc-json)
 
-**RPC JSON - RPC Server and Client Stream with JSON header and RAW body**
+**RPC JSON - Server and Client Stream with JSON header and RAW body**
 ```sh
 $ npm install rpc-json
 ```
-#### Run tests
+### Run tests
 Browse module (e.g. `node_modules/rpc-json`) install directory, and run tests:
 ```sh
 $ npm test
@@ -17,11 +17,11 @@ $ node test.js
 ```
 Compare test results with <a href="https://travis-ci.org/RealTimeCom/rpc-json">travis run tests</a>.
 
-#### Include in your script
+### Include in your script
 ```js
 const rpc = require('rpc-json');
 ```
-#### Server function example
+### Server function example
 ```js
 function request(response, head, body) {
     console.log('request', head, body.toString());
@@ -29,7 +29,7 @@ function request(response, head, body) {
     response(head, body); // callback, server response
 }
 ```
-#### Simple client-server stream pipe
+### Simple client-server stream pipe
 Connect client and server streams and exec two requests on the server.
 ```js
 const server = new rpc.server(request); // create server stream
@@ -53,12 +53,16 @@ request head2 body2
 response2 head2 body2
 */
 ```
-#### Simple client-server socket stream pipe
+### Simple client-server socket stream pipe
 Create net socket server `socketServer` and connect client socket `this` to the server. Exec one request on the server.
 ```js
+function filter(response, head, body) {
+    // verify if client needs response, and call back with custom arguments
+    if (response) { response('filtered', 'f-' + head, 'f-' + body.toString()); }
+}
 const net = require('net');
 const server2 = new rpc.server; // using default anonymous 'request' function
-const client2 = new rpc.client;
+const client2 = new rpc.client(filter); // using client filter function
 
 net.createServer(socket => { // client connected to the server:
     socket.pipe(server2).pipe(socket); // pipe 'rpc.server' to client connection 'socket'
@@ -68,23 +72,23 @@ listen(function() { // server listen to a random port
     client2.server = this; // optional, attach server object 'this' to 'client2'
     net.connect(a.port, a.address, function() { // client connected to the server:
         this.pipe(client2).pipe(this); // pipe 'rpc.client' to server socket connection 'this'
-        client2.exec((head, body) => { // server2 response
-            console.log('response3', head, body.toString());
+        client2.exec(function() { // server2 response
+            console.log('response3', arguments);
         }, 'head3', 'body3'); // client2 request
     }).on('end', () => console.log('socket client end'));
 }).on('close', () => console.log('socket server close'));
 /**
 console.log:
 ---
-response3 head3 body3
+response3 { '0': 'filtered', '1': 'f-head3', '2': 'f-body3' }
 */
 ```
-#### Delay request
+### Delay request
 Execute a delay request after 1 second.
 ```js
 setTimeout(() => {
-    client2.exec(function(head, body) { // server response
-        console.log('response4', head, body.toString());
+    client2.exec(function() { // server response
+        console.log('response4', arguments);
         this.push(null); // optional, end client2 connection
         this.server.close(); // optional, close the socket server
     }, 'head4', 'body4'); // client2 request
@@ -95,26 +99,38 @@ setTimeout(() => {
 console.log:
 ---
 request head5 body5
-response4 head4 body4
+response4 { '0': 'filtered', '1': 'f-head4', '2': 'f-body4' }
 socket server close
 socket client end
 */
 ```
-#### Server function `request (response, head, body)`
+### Server class `(request)`
+* <b><code>request (response, head, body)</code></b> - function, optional, see below
+
+### Server function `request (response, head, body)`
 * <b><code>response (head, body)</code></b> - callback function, server response
-* `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
+* `head` - Value, can be any type (not a function) - deserialized with JSON
 * `body` - Buffer or String
 * `this` - Bind Server Object
 
-Default server anonymous `request` function is response back to client with the same request `head` and `body` values, like this: `(response, head, body) => response(head, body)`
+Default server anonymous `request` function will response back to client with the same request `head` and `body` values, like this: `(response, head, body) => response(head, body)`
 
-#### Client function `exec (response, head, body)`
-* <b><code>response (head, body)</code></b> - callback function, server response, null - discard
-* `head` - Value, can be any type (not a function) - it is serialize and deserialize with JSON
+### Client class `(filter)`
+* <b><code>filter (response, head, body)</code></b> - function, optional, see below
+
+#### Client function `filter (response, head, body)`
+* <b><code>response</code></b> - callback function, custom client response
+* `head` - Value, can be any type (not a function) - deserialized with JSON
 * `body` - Buffer or String
 * `this` - Bind Client Object
 
-#### Custom error event names
+### Client function `exec (response, head, body)`
+* <b><code>response</code></b> - callback function, client response, null - discard
+* `head` - Value, can be any type (not a function)
+* `body` - Buffer or String
+* `this` - Bind Client Object
+
+### Custom error event names
 * `serverError` - error event name for `rpc.server`
 * `clientError` - error event name for `rpc.client`
 

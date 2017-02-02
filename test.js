@@ -30,9 +30,14 @@ request head2 body2
 response2 head2 body2
 */
 
+function filter(response, head, body) {
+    // verify if client needs response, and call back with custom arguments
+    if (response) { response('filtered', 'f-' + head, 'f-' + body.toString()); }
+}
+
 const net = require('net');
 const server2 = new rpc.server; // using default anonymous 'request' function
-const client2 = new rpc.client;
+const client2 = new rpc.client(filter); // using client filter function
 
 net.createServer(socket => { // client connected to the server:
     socket.pipe(server2).pipe(socket); // pipe 'rpc.server' to client connection 'socket'
@@ -42,20 +47,20 @@ listen(function() { // server listen to a random port
     client2.server = this; // optional, attach server object 'this' to 'client2'
     net.connect(a.port, a.address, function() { // client connected to the server:
         this.pipe(client2).pipe(this); // pipe 'rpc.client' to server socket connection 'this'
-        client2.exec((head, body) => { // server2 response
-            console.log('response3', head, body.toString());
+        client2.exec(function() { // server2 response
+            console.log('response3', arguments);
         }, 'head3', 'body3'); // client2 request
     }).on('end', () => console.log('socket client end'));
 }).on('close', () => console.log('socket server close'));
 /**
 console.log:
 ---
-response3 head3 body3
+response3 { '0': 'filtered', '1': 'f-head3', '2': 'f-body3' }
 */
 
 setTimeout(() => {
-    client2.exec(function(head, body) { // server response
-        console.log('response4', head, body.toString());
+    client2.exec(function() { // server response
+        console.log('response4', arguments);
         this.push(null); // optional, end client2 connection
         this.server.close(); // optional, close the socket server
     }, 'head4', 'body4'); // client2 request
@@ -66,7 +71,7 @@ setTimeout(() => {
 console.log:
 ---
 request head5 body5
-response4 head4 body4
+response4 { '0': 'filtered', '1': 'f-head4', '2': 'f-body4' }
 socket server close
 socket client end
 */

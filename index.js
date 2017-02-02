@@ -26,10 +26,11 @@ server.prototype._transform = trans;
 server.prototype._flush = flush;
 
 class client extends Transform {
-    constructor() {
+    constructor(f) {
         super();
         Object.assign(this, init);
-        this.f = undefined;
+        this.x = typeof f === 'function' ? f.bind(this) : undefined; // client filter function
+        this.f = undefined; // cache client function
         this.e = 'clientError'; // custom error event name
         this.c = cache.z; // init empty cache buffer
     }
@@ -38,7 +39,7 @@ client.prototype._transform = trans;
 client.prototype._flush = flush;
 
 client.prototype.exec = function(f, head, body) {
-    this.f = typeof f === 'function' ? f.bind(this) : undefined; // cache client function
+    this.f = typeof f === 'function' ? f.bind(this) : undefined; // cache client function, reset to 'undefined' if none
     send.bind(this)(head, body);
     return this;
 };
@@ -46,7 +47,7 @@ client.prototype.exec = function(f, head, body) {
 function parse(chunk) {
     this.c = Buffer.concat([this.c, chunk]);
     if (this.h) { // chunk is header
-        this.p = {}; // init/reset this.p
+        this.p = {}; // init/reset header cache
         const i = this.c.indexOf(cache.n); // search for separator
         if (i !== -1) { // separator is found
             const h = this.c.slice(0, i).toString().trim();
@@ -56,19 +57,20 @@ function parse(chunk) {
                     const body = this.c.slice(i + cache.n.length);
                     if (body.length >= p.l) { // body complete
                         if (body.length > p.l) {
-                            body = body.slice(0, p.l);
-                            this.c = body.slice(p.l); // cache remaining bytes, for the next request
+                            body = body.slice(0, p.l); // 'p.l' is header value of the body length
+                            this.c = body.slice(p.l); // cache remaining data, for the next request
                         } else { // empty cache
                             this.c = cache.z;
                         }
-                        if (this.e === 'serverError') { // is server
-                            if (this._readableState.pipes.pause) { this._readableState.pipes.pause(); } // pause socket until server response back
+                        if (this.e === 'serverError') { // this is server
+                            if (this._readableState.pipes.pause) { this._readableState.pipes.pause(); } // pause socket until the server response back to client
                             this.f(send.bind(this), p.h, body);
-                        } else {
-                            if (typeof this.f === 'function') { this.f(p.h, body); }
+                        } else { // this is client
+                            if (typeof this.x === 'function') { this.x(this.f, p.h, body); } // call client filter function
+                            else if (typeof this.f === 'function') { this.f(p.h, body); } // call client function
                         }
                     } else { // need more data for body
-                        this.p = p; // cahce header
+                        this.p = p; // cache header
                         this.h = false; // next chunk is body
                         this.c = body; // save body part to cache
                     }
@@ -77,30 +79,31 @@ function parse(chunk) {
                     this.c = cache.z;
                     if (this.w) { this.push(null); }
                 }
-            } catch (e) {
+            } catch (e) { // JSON error
                 this.emit(this.e, e);
                 this.c = cache.z;
                 if (this.w) { this.push(null); }
             }
-        } // need more data
+        } // need more data for header
     } else { // chunk is body
         if (this.c.length >= this.p.l) { // body complete
             let body;
-            if (this.c.length > this.p.l) {
+            if (this.c.length > this.p.l) { // got more bytes
                 body = this.c.slice(0, this.p.l);
-                this.c = this.c.slice(this.p.l); // cache remaining bytes, for next request
+                this.c = this.c.slice(this.p.l); // cache remaining data, for the next request
             } else {
-                body = this.c;
+                body = this.c; // got exact bytes
                 this.c = cache.z; // empty cache
             }
             this.h = true; // next chunk is header
-            if (this.e === 'serverError') { // is server
-                if (this._readableState.pipes.pause) { this._readableState.pipes.pause(); } // pause socket until server response back
+            if (this.e === 'serverError') { // this is server
+                if (this._readableState.pipes.pause) { this._readableState.pipes.pause(); } // pause socket until the server response back to client
                 this.f(send.bind(this), this.p.h, body); // call server function
-            } else { // is client
-                if (typeof this.f === 'function') { this.f(this.p.h, body); } // call client function
+            } else { // this is client
+                if (typeof this.x === 'function') { this.x(this.f, p.h, body); } // call client filter function
+                else if (typeof this.f === 'function') { this.f(this.p.h, body); } // call client function
             }
-        } // need more bytes for body
+        } // need more data for body
     }
 }
 
@@ -111,9 +114,9 @@ function send(head, body) {
             body = typeof body === 'string' ? Buffer.from(body) : Buffer.from(body + '');
         }
         try { // try JSON.stringify()
-            this.push(Buffer.concat([Buffer.from(JSON.stringify({ h: head, l: body.length })), cache.n, body]));
+            this.push(Buffer.concat([Buffer.from(JSON.stringify({ h: head, l: body.length })), cache.n, body])); // 'l' is header value of the body length, see 'p.l' above
             if (this._readableState.pipes.resume) { this._readableState.pipes.resume(); } // resume socket, get more data
-        } catch (e) {
+        } catch (e) { // JSON error
             this.emit(this.e, e);
             this.c = cache.z;
             this.push(null);
