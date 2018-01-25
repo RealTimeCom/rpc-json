@@ -28,11 +28,11 @@ catch(console.error);
 console.log:
 ---
 client-request head1 body1
-server-response1 head1 body1
+server-response1 s-head1 body1
 client-request head2 body2
-server-response3 head2 body2
+server-response3 s-head2 body2
 client-request head3 body3
-server-response3 head3 body3
+server-response3 s-head3 body3
 */
 
 function filter(response, head, body) {
