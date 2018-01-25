@@ -47,10 +47,9 @@ const client2 = new rpc.client(filter); // using client 'filter' function
 net.createServer(socket => { // client connected to the server:
     socket.pipe(server2).pipe(socket); // pipe 'rpc.server' to client connection 'socket'
 }).
-listen(function() { // server listen to a random port
-    const a = this.address(); // get the server port and address
+listen('/tmp/rpc', function() { // server listen to a random port
     client2.server = this; // optional, attach server object 'this' to 'client2'
-    net.connect(a.port, a.address, function() { // client connected to the server:
+    net.connect('/tmp/rpc', function() { // client connected to the server:
         this.pipe(client2).pipe(this); // pipe 'rpc.client' to server socket connection 'this'
         client2.exec(function() { // server2 response
             console.log('server-response4', arguments);
