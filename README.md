@@ -32,7 +32,7 @@ function request(response, head, body) {
 }
 ```
 ### Simple client-server stream pipe
-Connect client and server streams and exec two requests on the server.
+Connect client and server streams and Promise `exec` few requests on the server.
 ```js
 const server = new rpc.server(request); // create server stream and add custom function 'request'
 const client = new rpc.client; // create client stream, no filter
@@ -41,13 +41,13 @@ client.pipe(server).pipe(client). // pipe: client (request to:) > server (respon
 exec((head, body) => { // server response: String "head1", Buffer "body1"
     console.log('server-response1', head, body.toString());
 }, 'head1', 'body1'). // client request: String "head1", String "body1"
-then(client.exec((head, body) => {
+then(client.exec((head, body) => { // call Promise 'exec'
     console.log('server-response2', head, body.toString());
 }, 'head2', 'body2')).
-then(client.exec((head, body) => {
+then(client.exec((head, body) => { // call Promise 'exec'
     console.log('server-response3', head, body.toString());
 }, 'head3', 'body3')).
-catch(console.error);
+catch(console.error); // catch Promise error
 // and so on...
 /**
 console.log:
