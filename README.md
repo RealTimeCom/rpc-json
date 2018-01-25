@@ -32,7 +32,7 @@ function request(response, head, body) {
 }
 ```
 ### Simple client-server stream pipe
-Connect client and server streams and Promise `exec` few requests on the server.
+Promise `exec` few requests on the server.
 ```js
 const server = new rpc.server(request); // create server stream and add custom function 'request'
 const client = new rpc.client; // create client stream, no filter
