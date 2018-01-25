@@ -69,7 +69,7 @@ function filter(response, head, body) {
 }
 
 const net = require('net');
-const server2 = new rpc.server; // using default anonymous 'request' function, see bellow
+const server2 = new rpc.server; // using default anonymous 'request' function, see below
 const client2 = new rpc.client(filter); // using client 'filter' function
 
 net.createServer(socket => { // client connected to the server:
