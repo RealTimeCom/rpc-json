@@ -22,5 +22,11 @@
     "bugs": {
         "url": "https://github.com/RealTimeCom/rpc-json/issues"
     },
-    "homepage": "https://github.com/RealTimeCom/rpc-json"
+    "homepage": "https://github.com/RealTimeCom/rpc-json",
+    "eslintConfig": {
+        "env": {
+            "node": true,
+            "es6": true
+        }
+    }
 }
