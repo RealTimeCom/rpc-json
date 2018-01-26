@@ -24,10 +24,10 @@ on('end', () => console.log('Client onEnd'));
 // pipe: client (request to:) > server (response back to:) > client
 client.pipe(server).pipe(client).
 exec('head1', 'body1').
-then(r => { // log1 is first
+then(r => {
     console.log('log1', r);
     return client.exec('head2', 'body2');
-}). // log2 after log3
+}).
 then(r => console.log('log2', r)).
 catch(e => console.log('e2', e));
 // log3 before log2
@@ -36,7 +36,8 @@ client.exec('head3', 'body3').
 then(r => console.log('log3', r)).
 catch(e => console.log('e3', e));
 */
-(async () => { // using async / await
+// using async / await
+(async () => {
     console.log('log3', await client.exec('head3', 'body3'));
 })().catch(e => console.log('e3', e));
 
