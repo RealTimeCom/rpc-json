@@ -63,7 +63,6 @@ log3 { head: 's-head3', body: <Buffer 62 6f 64 79 33> }
 */
 ```
 ### Simple client-server socket stream pipe
-Create net socket server `socketServer` and connect client socket `this` to the server. Exec one request on the server.
 ```js
 const net = require('net');
 const server2 = new rpc.server; // using default anonymous request function
