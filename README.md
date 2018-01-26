@@ -106,9 +106,6 @@ socket server close
 socket client end
 */
 ```
-### Server class `(request)`
-* <b><code>request (response, head, body)</code></b> - function, optional, see below
-
 ### Server function `request (response, head, body)`
 * <b><code>response (head, body)</code></b> - callback Promise function, server response
 * `head` - Value, can be any type (not a function) - deserialized with JSON
