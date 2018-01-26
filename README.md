@@ -72,7 +72,7 @@ const client2 = new rpc.client;
 net.createServer(socket => { // on client connect
     socket.pipe(server2).pipe(socket); // attach 'server2' to client socket connection 'socket'
 }).
-listen(function() { // server listen to unix socket file 'rpc.sock'
+listen(function() { // server listen to random port and address
     const a = this.address(); // get the server port and address
     client2.server = this; // optional, attach server object 'this' to 'client2'
     net.connect(a.port, a.address, function() { // on client connect
