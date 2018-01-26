@@ -79,8 +79,7 @@ setTimeout(() => {
         console.log('log5', r);
         client2.push(null); // optional, end client2 connection
         client2.server.close(); // optional, close the socket server
-    }).
-    catch(e => console.log('e5', e));
+    }).catch(e => console.log('e5', e));
 }, 1000); // call exec on 'client2' after 1 second
 
 /* Output

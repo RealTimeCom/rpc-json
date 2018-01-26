@@ -79,7 +79,7 @@ listen(function() { // server listen to unix socket file 'rpc.sock'
         this.pipe(client2).pipe(this); // attach 'client2' to server socket connection 'this'
         client2.exec('head4', 'body4').
         then(r => console.log('log4', r)).
-        catch(e => console.log('e4', e));
+        catch(console.error);
     }).on('end', () => console.log('socket client end'));
 }).on('close', () => console.log('socket server close'));
 
@@ -96,8 +96,7 @@ setTimeout(() => {
         console.log('log5', r);
         client2.push(null); // optional, end client2 connection
         client2.server.close(); // optional, close the socket server
-    }).
-    catch(e => console.log('e5', e));
+    }).catch(console.error);
 }, 1000); // call exec on 'client2' after 1 second
 
 /* Output
