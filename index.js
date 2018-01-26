@@ -8,7 +8,8 @@ const cache = { // cache common values
 };
 const init = { // init object values
     p: null, // data header request cache, next chunk is header
-    w: true // connection is open?
+    w: true, // connection is open?
+    c: cache.z // init empty cache buffer
 };
 
 class server extends Transform {
@@ -16,8 +17,7 @@ class server extends Transform {
         super();
         this._ = {
             f: typeof f === 'function' ? f.bind(this) : (response, head, body) => response(head, body), // cache server function
-            e: 'serverError', // custom error event name
-            c: cache.z // init empty cache buffer
+            e: 'serverError' // custom error event name
         };
         Object.assign(this._, init);
     }
@@ -26,22 +26,20 @@ server.prototype._transform = trans;
 server.prototype._flush = flush;
 
 class client extends Transform {
-    constructor(f) {
+    constructor() {
         super();
         this._ = {
-            x: typeof f === 'function' ? f.bind(this) : undefined, // client filter function
-            f: undefined, // cache client function
-            e: 'clientError', // custom error event name
-            c: cache.z // init empty cache buffer
-        };
+            resolve: undefined, // Promise resolve function
+            reject: undefined, // Promise reject function
+            e: 'clientError' // custom error event name
+        }
         Object.assign(this._, init);
     }
 }
 client.prototype._transform = trans;
 client.prototype._flush = flush;
 
-client.prototype.exec = async function(f, head, body) {
-    this._.f = typeof f === 'function' ? f.bind(this) : undefined; // cache client function, reset to 'undefined' if none
+client.prototype.exec = async function(head, body) {
     return await send.bind(this)(head, body);
 };
 
@@ -61,8 +59,7 @@ function parse(t, chunk) {
                             if (t._.e === 'serverError') { // is server
                                 t._.f(send.bind(t), p.h, body);
                             } else { // is client
-                                if (typeof t._.x === 'function') { t._.x(t._.f, p.h, body); } // call client filter function
-                                else if (typeof t._.f === 'function') { t._.f(p.h, body); } // call client function
+                                if (t._.resolve) { t._.resolve({ head: p.h, body: body }); }
                             }
                         } else { // need more data for body
                             t._.c = t._.c.slice(i + cache.n.length); // cache body part
@@ -72,14 +69,16 @@ function parse(t, chunk) {
                     } else {
                         t._.c = cache.z; // clear cache
                         t.push(null); // close connection
-                        reject(new Error('invalid header'));
+                        if (t._.reject) { t._.reject(new Error('invalid header')); }
+                        reject(new Error('invalid header')); // will emit() error event
                     }
                 } catch (e) { // JSON error
                     t._.c = cache.z; // clear cache
                     t.push(null); // close connection
-                    reject(e);
+                    if (t._.reject) { t._.reject(e); }
+                    reject(e); // will emit() error event
                 }
-            } else {
+            } else { // need more data for header
                 resolve();
             }
         } else { // chunk is body
@@ -91,8 +90,7 @@ function parse(t, chunk) {
                 if (t._.e === 'serverError') { // is server
                     t._.f(send.bind(t), p.h, body);
                 } else { // is client
-                    if (typeof t._.x === 'function') { t._.x(t._.f, p.h, body); } // call client filter function
-                    else if (typeof t._.f === 'function') { t._.f(p.h, body); } // call client function
+                    if (t._.resolve) { t._.resolve({ head: p.h, body: body }); }
                 }
             }
             resolve();
@@ -109,13 +107,18 @@ function send(head, body) {
                 body = typeof body === 'string' ? Buffer.from(body) : Buffer.from(body + '');
             }
             try { // try JSON.stringify()
-                t.push(Buffer.concat([Buffer.from(JSON.stringify({ h: head, l: body.length })), cache.n, body])); // 'l' is header value of the body length, see 'p.l' above
-                resolve();
+                const h = JSON.stringify({ h: head, l: body.length }); // 'l' is header value of the body length, see 'p.l' above
+                if (t._.e !== 'serverError') { // is client, resolve after server response
+                    t._.resolve = resolve;
+                    t._.reject = reject;
+                }
+                t.push(Buffer.concat([Buffer.from(h), cache.n, body]));
+                if (t._.e === 'serverError') { resolve(); } // is server
             } catch (e) { // JSON error
                 reject(e);
             }
         } else {
-            reject(new Error('call server response/send() after error'));
+            reject(new Error('call server send() after error / stream close'));
         }
     });
 }
@@ -130,11 +133,11 @@ async function trans(chunk, enc, cb) {
     cb();
 }
 async function flush(cb) {
+    this._.w = false;
     if (this._.c.length > 0) {
         try {
             await parse(this, cache.z); // parse data left
         } catch (e) {
-            this._.w = false;
             this.emit(this._.e, e);
         }
     }

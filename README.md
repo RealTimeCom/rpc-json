@@ -23,91 +23,90 @@ Compare test results with <a href="https://travis-ci.org/RealTimeCom/rpc-json">t
 ```js
 const rpc = require('rpc-json');
 ```
-### Define custom server function `request`
+### Define custom server function `query`
 ```js
-function request(response, head, body) {
-    console.log('client-request', head, body.toString()); // print client request
+function query(response, head, body) {
+    console.log('client-request', head, body.toString());
     // response back to client
-    response('s-' + head, body).catch(console.error); // callback, server response
+    response('s-' + head, body).catch(console.error);
 }
 ```
 ### Simple client-server stream pipe
-Promise `exec` few requests on the server.
+Promise or async/await `exec` few requests on the server.
 ```js
-const server = new rpc.server(request); // create server stream and add custom function 'request'
-const client = new rpc.client; // create client stream, no filter
+const server = new rpc.server(query); // using custom 'query' request function
+const client = new rpc.client;
 
-client.pipe(server).pipe(client). // pipe: client (request to:) > server (response back to:) > client
-exec((head, body) => { // server response: String "s-head1", Buffer "body1"
-    console.log('server-response1', head, body.toString());
-}, 'head1', 'body1'). // client request: String "head1", String "body1"
-then(client.exec((head, body) => {
-    console.log('server-response2', head, body.toString());
-}, 'head2', 'body2')).
-then(client.exec((head, body) => {
-    console.log('server-response3', head, body.toString());
-}, 'head3', 'body3')).
+// pipe: client (request to:) > server (response back to:) > client
+client.pipe(server).pipe(client).
+exec('head1', 'body1').
+then(r => { // log1 is first
+    console.log('log1', r);
+    return client.exec('head2', 'body2');
+}). // log2 after log3
+then(r => console.log('log2', r)).
 catch(console.error);
-// and so on...
-/**
-console.log:
----
+// log3 before log2
+/* same as async / await , see below
+client.exec('head3', 'body3').
+then(r => console.log('log3', r)).
+catch(console.error);
+*/
+(async () => { // using async/await
+    console.log('log3', await client.exec('head3', 'body3'));
+})().catch(console.error);
+
+/* Output
+---------
 client-request head1 body1
-server-response1 s-head1 body1
-client-request head2 body2
-server-response3 s-head2 body2
 client-request head3 body3
-server-response3 s-head3 body3
+log1 { head: 's-head1', body: <Buffer 62 6f 64 79 31> }
+client-request head2 body2
+log2 { head: 's-head2', body: <Buffer 62 6f 64 79 32> }
+log3 { head: 's-head3', body: <Buffer 62 6f 64 79 33> }
 */
 ```
 ### Simple client-server socket stream pipe
 Create net socket server `socketServer` and connect client socket `this` to the server. Exec one request on the server.
 ```js
-function filter(response, head, body) {
-    // verify if client needs response, and call back with custom arguments
-    if (response) { response('filtered', 'f-' + head, 'f-' + body.toString()); }
-}
-
 const net = require('net');
-const server2 = new rpc.server; // using default anonymous 'request' function, see below
-const client2 = new rpc.client(filter); // using client 'filter' function
+const server2 = new rpc.server; // using default anonymous request function
+const client2 = new rpc.client;
 
-net.createServer(socket => { // client connected to the server:
-    socket.pipe(server2).pipe(socket); // pipe 'rpc.server' to client connection 'socket'
+net.createServer(socket => { // on client connect
+    socket.pipe(server2).pipe(socket); // attach 'server2' to client socket connection 'socket'
 }).
-listen(function() { // server listen to a random port
+listen(function() { // server listen to unix socket file 'rpc.sock'
     const a = this.address(); // get the server port and address
     client2.server = this; // optional, attach server object 'this' to 'client2'
-    net.connect(a.port, a.address, function() { // client connected to the server:
-        this.pipe(client2).pipe(this); // pipe 'rpc.client' to server socket connection 'this'
-        client2.exec(function() { // server2 response
-            console.log('server-response4', arguments);
-        }, 'head4', 'body4').catch(console.error); // client2 request
+    net.connect(a.port, a.address, function() { // on client connect
+        this.pipe(client2).pipe(this); // attach 'client2' to server socket connection 'this'
+        client2.exec('head4', 'body4').
+        then(r => console.log('log4', r)).
+        catch(e => console.log('e4', e));
     }).on('end', () => console.log('socket client end'));
 }).on('close', () => console.log('socket server close'));
-/**
-console.log:
----
-server-response4 { '0': 'filtered', '1': 'f-head4', '2': 'f-body4' }
+
+/* Output
+---------
+log4 { head: 'head4', body: <Buffer 62 6f 64 79 34> }
 */
 ```
-### Delay request
-Execute a delay request after 1 second.
+### Execute a delay request and close connections
 ```js
 setTimeout(() => {
-    client2.exec(function() { // server response
-        console.log('server-response5', arguments);
-        this.push(null); // optional, end client2 connection
-        this.server.close(); // optional, close the socket server
-    }, 'head5', 'body5').catch(console.error); // client2 request
-    // client internal request, is faster than client2 net socket
-    client.exec(null, 'head6', 'body6').catch(console.error); // null - discard callback response
-}, 1000); // exec command on 'client2' after 1 second
-/**
-console.log:
----
-client-request head6 body6
-server-response5 { '0': 'filtered', '1': 'f-head5', '2': 'f-body5' }
+    client2.exec('head5', 'body5').
+    then(r => {
+        console.log('log5', r);
+        client2.push(null); // optional, end client2 connection
+        client2.server.close(); // optional, close the socket server
+    }).
+    catch(e => console.log('e5', e));
+}, 1000); // call exec on 'client2' after 1 second
+
+/* Output
+---------
+log5 { head: 'head5', body: <Buffer 62 6f 64 79 35> }
 socket server close
 socket client end
 */
@@ -123,20 +122,10 @@ socket client end
 
 Default server anonymous `request` function will response back to client with the same request `head` and `body` values, like this: `(response, head, body) => response(head, body)`
 
-### Client class `(filter)`
-* <b><code>filter (response, head, body)</code></b> - function, optional, see below
-
-### Client function `filter (response, head, body)`
-* <b><code>response</code></b> - callback function, custom client response
-* `head` - Value, can be any type (not a function) - deserialized with JSON
-* `body` - Buffer or String
-* `this` - Bind Client Object
-
-### Client Promise function `exec (response, head, body)`
-* <b><code>response</code></b> - callback function, client response, null - discard
+### Client Promise function `exec (head, body)`
+* <b><code>Promise.resolve( { head, body } )</code></b>
 * `head` - Value, can be any type (not a function)
 * `body` - Buffer or String
-* `this` - Bind Client Object
 
 ### Custom stream error event names
 * `serverError` - error event name for `rpc.server`
@@ -147,7 +136,7 @@ server.on('serverError', e => console.log('onServerError', e));
 client.on('clientError', e => console.log('onClientError', e));
 ```
 
-**For more informations, consult or run the <a href="https://github.com/RealTimeCom/rpc-json/blob/master/test.js"><b>test.js</b></a> file.**
+**For more info consult or run the <a href="https://github.com/RealTimeCom/rpc-json/blob/master/test.js"><b>test.js</b></a> file.**
 
 --------------------------------------------------------
 **RPC JSON** is licensed under the MIT license. See the included `LICENSE` file for more details.
