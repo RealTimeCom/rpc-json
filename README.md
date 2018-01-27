@@ -23,12 +23,12 @@ Compare test results with <a href="https://travis-ci.org/RealTimeCom/rpc-json">t
 ```js
 const rpc = require('rpc-json');
 ```
-### Define custom server async function `query`
+### Define custom server async `query` function
 ```js
 async function query(response, head, body) {
     console.log('client-request', head, body.toString());
     // response back to client
-    await response('s-' + head, body);
+    return await response('s-' + head, body);
 }
 ```
 ### Simple client-server stream pipe
@@ -105,13 +105,13 @@ socket server close
 socket client end
 */
 ```
-### Server function `request (response, head, body)`
+### Server async function `request (response, head, body)`
 * <b><code>response (head, body)</code></b> - callback Promise function, server response
 * `head` - Value, can be any type (not a function) - deserialized with JSON
 * `body` - Buffer or String
 * `this` - Bind Server Object
 
-Default server anonymous `request` function will response back to client with the same request `head` and `body` values, like this: `(response, head, body) => response(head, body)`
+Default server anonymous async `request` function will response back to client with the same request `head` and `body` values, like this: `async (response, head, body) => await response(head, body)`
 
 ### Client Promise function `exec (head, body)`
 * <b><code>Promise.resolve( { head, body } )</code></b>

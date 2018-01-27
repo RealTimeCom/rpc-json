@@ -16,7 +16,7 @@ class server extends Transform {
     constructor(f) {
         super();
         this._ = {
-            f: typeof f === 'function' ? f.bind(this) : (response, head, body) => response(head, body), // cache server function
+            f: typeof f === 'function' ? f.bind(this) : async (response, head, body) => await response(head, body), // cache server function
             e: 'serverError' // custom error event name
         };
         Object.assign(this._, init);
