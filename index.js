@@ -57,15 +57,21 @@ function parse(t, chunk) {
                         if (body.length === p.l) { // body complete
                             t._.c = t._.c.slice(i + cache.n.length + p.l); // cache data left
                             if (t._.e === 'serverError') { // is server
-                                t._.f(send.bind(t), p.h, body);
+                                try {
+                                    t._.f(send.bind(t), p.h, body);
+                                    resolve();
+                                } catch (e) {
+                                    reject(e);
+                                }
                             } else { // is client
-                                if (t._.resolve) { t._.resolve({ head: p.h, body: body }); }
+                                if (t._.resolve) { t._.resolve({ head: p.h, body: body }); } // send().resolve
+                                resolve(); // parse().resolve
                             }
                         } else { // need more data for body
                             t._.c = t._.c.slice(i + cache.n.length); // cache body part
                             t._.p = p; // cache header, next chunk is body
+                            resolve();
                         }
-                        resolve();
                     } else {
                         t._.c = cache.z; // clear cache
                         t.push(null); // close connection
@@ -88,12 +94,19 @@ function parse(t, chunk) {
                 t._.p = null; // next chunk is header
                 t._.c = t._.c.slice(p.l); // cache data left
                 if (t._.e === 'serverError') { // is server
-                    t._.f(send.bind(t), p.h, body);
+                    try {
+                        t._.f(send.bind(t), p.h, body);
+                        resolve();
+                    } catch (e) {
+                        reject(e);
+                    }
                 } else { // is client
-                    if (t._.resolve) { t._.resolve({ head: p.h, body: body }); }
+                    if (t._.resolve) { t._.resolve({ head: p.h, body: body }); } // send().resolve
+                    resolve(); // parse().resolve
                 }
+            } else {
+                resolve();
             }
-            resolve();
         }
     });
 }

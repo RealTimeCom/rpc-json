@@ -4,10 +4,10 @@
 const rpc = require('./index.js');
 
 // define custom server function 'query'
-function query(response, head, body) {
+async function query(response, head, body) {
     console.log('client-request', head, body.toString());
     // response back to client
-    response('s-' + head, body).catch(e => console.log('e1', e));
+    await response('s-' + head, body);
 }
 
 const server = new rpc.server(query); // using custom 'query' request function

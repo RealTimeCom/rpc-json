@@ -23,12 +23,12 @@ Compare test results with <a href="https://travis-ci.org/RealTimeCom/rpc-json">t
 ```js
 const rpc = require('rpc-json');
 ```
-### Define custom server function `query`
+### Define custom server async function `query`
 ```js
-function query(response, head, body) {
+async function query(response, head, body) {
     console.log('client-request', head, body.toString());
     // response back to client
-    response('s-' + head, body).catch(console.error);
+    await response('s-' + head, body);
 }
 ```
 ### Simple client-server stream pipe
