@@ -32,33 +32,55 @@ async function query(response, head, body) {
 }
 ```
 ### Simple client-server stream pipe
-Promise or async/await `exec` few requests on the server.
 ```js
 const server = new rpc.server(query); // using custom 'query' request function
 const client = new rpc.client;
 
 // pipe: client (request to:) > server (response back to:) > client
-client.pipe(server).pipe(client).
-exec('head1', 'body1').
-then(r => {
-    console.log('log1', r);
+client.pipe(server).pipe(client);
+```
+### Promise `exec` calls
+```js
+client.exec('head1', 'body1').
+then(r1 => {
+    console.log('log1', r1);
     return client.exec('head2', 'body2');
 }).
-then(r => console.log('log2', r)).
+then(r2 => {
+    console.log('log2', r2);
+    return client.exec('head3', 'body3');
+}).
+then(r3 => {
+    console.log('log3', r3);
+}).
 catch(console.error);
 
-// using async/await
+/* Output
+---------
+log1 { head: 's-head1', body: <Buffer 62 6f 64 79 31> }
+client-request head2 body2
+log2 { head: 's-head2', body: <Buffer 62 6f 64 79 32> }
+client-request head3 body3
+log3 { head: 's-head3', body: <Buffer 62 6f 64 79 33> }
+*/
+```
+### async/await `exec` calls
+```js
 (async () => {
-    console.log('log3', await client.exec('head3', 'body3'));
+    const r1 = await client.exec('head1', 'body1');
+    console.log('log1', r1);
+    const r2 = await client.exec('head2', 'body2');
+    console.log('log2', r2);
+    const r3 = await client.exec('head3', 'body3');
+    console.log('log3', r3);
 })().catch(console.error);
 
 /* Output
 ---------
-client-request head1 body1
-client-request head3 body3
 log1 { head: 's-head1', body: <Buffer 62 6f 64 79 31> }
 client-request head2 body2
 log2 { head: 's-head2', body: <Buffer 62 6f 64 79 32> }
+client-request head3 body3
 log3 { head: 's-head3', body: <Buffer 62 6f 64 79 33> }
 */
 ```
@@ -76,47 +98,36 @@ listen(function() { // server listen to random port and address
     client2.server = this; // optional, attach server object 'this' to 'client2'
     net.connect(a.port, a.address, function() { // on client connect
         this.pipe(client2).pipe(this); // attach 'client2' to server socket connection 'this'
-        client2.exec('head4', 'body4').
-        then(r => console.log('log4', r)).
+        client2.exec('head', 'body').
+        then(r => {
+            console.log('log', r);
+            client2.push(null); // optional, end client2 connection
+            client2.server.close(); // optional, close the socket server
+        }).
         catch(console.error);
     }).on('end', () => console.log('socket client end'));
 }).on('close', () => console.log('socket server close'));
 
 /* Output
 ---------
-log4 { head: 'head4', body: <Buffer 62 6f 64 79 34> }
-*/
-```
-### Execute a delay request and close connections
-```js
-setTimeout(() => {
-    client2.exec('head5', 'body5').
-    then(r => {
-        console.log('log5', r);
-        client2.push(null); // optional, end client2 connection
-        client2.server.close(); // optional, close the socket server
-    }).catch(console.error);
-}, 1000); // call exec on 'client2' after 1 second
-
-/* Output
----------
-log5 { head: 'head5', body: <Buffer 62 6f 64 79 35> }
+log { head: 'head', body: <Buffer 62 6f 64 79> }
 socket server close
 socket client end
 */
 ```
-### Server async function `request (response, head, body)`
-* <b><code>response (head, body)</code></b> - callback Promise function, server response
+### Server async function `request (<Promise> response, head, body)`
 * `head` - Value, can be any type (not a function) - deserialized with JSON
 * `body` - Buffer or String
 * `this` - Bind Server Object
+* return - <b><code><Promise> response (head, body)</code></b> - callback server response
 
 Default server anonymous async `request` function will response back to client with the same request `head` and `body` values, like this: `async (response, head, body) => await response(head, body)`
 
 ### Client Promise function `exec (head, body)`
-* <b><code>Promise.resolve( { head, body } )</code></b>
 * `head` - Value, can be any type (not a function)
 * `body` - Buffer or String
+* `this` - Bind Client Object
+* return - <b><code>Promise.resolve( { head, body } )</code></b> - `body` is Buffer
 
 ### Custom stream error event names
 * `serverError` - error event name for `rpc.server`

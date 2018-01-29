@@ -52,17 +52,13 @@ function parse(t, chunk) {
                 const h = t._.c.slice(0, i).toString().trim();
                 try { // try JSON.parse()
                     const p = JSON.parse(h);
-                    if ('h' in p && 'l' in p && typeof p.l === 'number' && p.l >= 0) { // p.l - body length
+                    if (!('h' in p)) { p.h = undefined; } // head not found, set to 'undefined'
+                    if ('l' in p && typeof p.l === 'number' && p.l >= 0) { // p.l - body length
                         const body = t._.c.slice(i + cache.n.length, i + cache.n.length + p.l);
                         if (body.length === p.l) { // body complete
                             t._.c = t._.c.slice(i + cache.n.length + p.l); // cache data left
                             if (t._.e === 'serverError') { // is server
-                                try {
-                                    t._.f(send.bind(t), p.h, body);
-                                    resolve();
-                                } catch (e) {
-                                    reject(e);
-                                }
+                                t._.f(send.bind(t), p.h, body).then(resolve).catch(reject);
                             } else { // is client
                                 if (t._.resolve) { t._.resolve({ head: p.h, body: body }); } // send().resolve
                                 resolve(); // parse().resolve
@@ -94,12 +90,7 @@ function parse(t, chunk) {
                 t._.p = null; // next chunk is header
                 t._.c = t._.c.slice(p.l); // cache data left
                 if (t._.e === 'serverError') { // is server
-                    try {
-                        t._.f(send.bind(t), p.h, body);
-                        resolve();
-                    } catch (e) {
-                        reject(e);
-                    }
+                    t._.f(send.bind(t), p.h, body).then(resolve).catch(reject);
                 } else { // is client
                     if (t._.resolve) { t._.resolve({ head: p.h, body: body }); } // send().resolve
                     resolve(); // parse().resolve
