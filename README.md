@@ -57,6 +57,7 @@ catch(console.error);
 
 /* Output
 ---------
+client-request head1 body1
 log1 { head: 's-head1', body: <Buffer 62 6f 64 79 31> }
 client-request head2 body2
 log2 { head: 's-head2', body: <Buffer 62 6f 64 79 32> }
@@ -77,6 +78,7 @@ log3 { head: 's-head3', body: <Buffer 62 6f 64 79 33> }
 
 /* Output
 ---------
+client-request head1 body1
 log1 { head: 's-head1', body: <Buffer 62 6f 64 79 31> }
 client-request head2 body2
 log2 { head: 's-head2', body: <Buffer 62 6f 64 79 32> }
