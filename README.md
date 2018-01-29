@@ -119,7 +119,7 @@ socket client end
 * `head` - Value, can be any type (not a function) - deserialized with JSON
 * `body` - Buffer or String
 * `this` - Bind Server Object
-* return - <b><code><Promise> response (head, body)</code></b> - callback server response
+* return - <b><code>&lt;Promise&gt; response (head, body)</code></b> - callback server response
 
 Default server anonymous async `request` function will response back to client with the same request `head` and `body` values, like this: `async (response, head, body) => await response(head, body)`
 
