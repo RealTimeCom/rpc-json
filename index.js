@@ -70,12 +70,14 @@ function parse(t, chunk) {
                         }
                     } else {
                         t._.c = cache.z; // clear cache
+                        t._.w = false; // prevent sending more data after push(null)
                         t.push(null); // close connection
                         if (t._.reject) { t._.reject(new Error('invalid header')); }
                         reject(new Error('invalid header')); // will emit() error event
                     }
                 } catch (e) { // JSON error
                     t._.c = cache.z; // clear cache
+                    t._.w = false; // prevent sending more data after push(null)
                     t.push(null); // close connection
                     if (t._.reject) { t._.reject(e); }
                     reject(e); // will emit() error event
@@ -105,7 +107,7 @@ function parse(t, chunk) {
 function send(head, body) {
     let t = this;
     return new Promise((resolve, reject) => {
-        if (t._.w) {
+        if (t._.w) { // connection is open
             if (body === undefined) { body = cache.z; }
             if (!Buffer.isBuffer(body)) { // convert body value into Buffer
                 body = typeof body === 'string' ? Buffer.from(body) : Buffer.from(body + '');
@@ -121,8 +123,8 @@ function send(head, body) {
             } catch (e) { // JSON error
                 reject(e);
             }
-        } else {
-            reject(new Error('call server send() after error / stream close'));
+        } else { // connection is close
+            reject(new Error('can not send data after close'));
         }
     });
 }
@@ -131,13 +133,12 @@ async function trans(chunk, enc, cb) {
     try {
         await parse(this, chunk); // parse chunk
     } catch (e) {
-        this._.w = false;
         this.emit(this._.e, e);
     }
     cb();
 }
 async function flush(cb) {
-    this._.w = false;
+    this._.w = false; // connection is closed, prevent sending more data
     if (this._.c.length > 0) {
         try {
             await parse(this, cache.z); // parse data left
