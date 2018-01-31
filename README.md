@@ -92,8 +92,7 @@ const net = require('net');
 
 const srv = net.createServer(socket => { // on client connect
     socket.pipe(new rpc.server).pipe(socket); // create new 'rpc.server' object here, to reset data flow on each client
-}).
-listen(function() { // server listen to unix socket file 'rpc.sock'
+}).listen(function() { // server listen
     const a = this.address(); // get the server port and address
     net.connect(a.port, a.address, function() { // on client connect
         const cli = new rpc.client; // create new 'rpc.client' object here, to reset data flow on each client
