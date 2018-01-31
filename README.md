@@ -89,24 +89,21 @@ log3 { head: 's-head3', body: <Buffer 62 6f 64 79 33> }
 ### Simple client-server socket stream pipe
 ```js
 const net = require('net');
-const server2 = new rpc.server; // using default anonymous request function
-const client2 = new rpc.client;
 
-net.createServer(socket => { // on client connect
-    socket.pipe(server2).pipe(socket); // attach 'server2' to client socket connection 'socket'
+const srv = net.createServer(socket => { // on client connect
+    socket.pipe(new rpc.server).pipe(socket); // create new 'rpc.server' object here, to reset data flow on each client
 }).
-listen(function() { // server listen to random port and address
+listen(function() { // server listen to unix socket file 'rpc.sock'
     const a = this.address(); // get the server port and address
-    client2.server = this; // optional, attach server object 'this' to 'client2'
     net.connect(a.port, a.address, function() { // on client connect
-        this.pipe(client2).pipe(this); // attach 'client2' to server socket connection 'this'
-        client2.exec('head', 'body').
-        then(r => {
+        const cli = new rpc.client; // create new 'rpc.client' object here, to reset data flow on each client
+        this.pipe(cli).pipe(this); // attach client to the server connection
+        cli.exec('head', 'body'). // exec call
+        then(r => { // response from server
             console.log('log', r);
-            client2.push(null); // optional, end client2 connection
-            client2.server.close(); // optional, close the socket server
-        }).
-        catch(console.error);
+            cli.push(null); // optional, end client connection
+            srv.close(); // optional, close the socket server
+        }).catch(console.error);
     }).on('end', () => console.log('socket client end'));
 }).on('close', () => console.log('socket server close'));
 
