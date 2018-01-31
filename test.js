@@ -67,12 +67,13 @@ alog3 { head: 's-ahead3', body: <Buffer 61 62 6f 64 79 33> }
 */
 
 const net = require('net');
+const named = (process.platform === 'win32' ? '\\\\.\\pipe\\' : '/tmp/') + 'rpc'; // IPC file path + name
 
 const srv = net.createServer(socket => { // on client connect
     socket.pipe(new rpc.server).pipe(socket); // create new 'rpc.server' object here, to reset data flow on each client
 }).
-listen('/tmp/rpc.sock', function() { // server listen to unix socket file 'rpc.sock'
-    net.connect('/tmp/rpc.sock', function() { // on client connect
+listen(named, function() { // server listen to unix socket file 'rpc.sock'
+    net.connect(named, function() { // on client connect
         const cli = new rpc.client; // create new 'rpc.client' object here, to reset data flow on each client
         this.pipe(cli).pipe(this); // attach client to the server connection
         cli.exec('head', 'body'). // exec call
