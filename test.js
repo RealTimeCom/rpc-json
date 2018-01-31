@@ -72,7 +72,7 @@ const named = (process.platform === 'win32' ? '\\\\.\\pipe\\' : '/tmp/') + 'rpc'
 const srv = net.createServer(socket => { // on client connect
     socket.pipe(new rpc.server).pipe(socket); // create new 'rpc.server' object here, to reset data flow on each client
 }).
-listen(named, function() { // server listen to unix socket file 'rpc.sock'
+listen(named, function() { // IPC server
     net.connect(named, function() { // on client connect
         const cli = new rpc.client; // create new 'rpc.client' object here, to reset data flow on each client
         this.pipe(cli).pipe(this); // attach client to the server connection
